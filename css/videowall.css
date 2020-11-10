@@ -1,0 +1,25 @@
+.video-wall {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-evenly;
+}
+
+.video-block {
+  flex: 1;
+  margin: 5px;
+  min-width: 240px;
+  max-width: 320px;
+  width: 100%;
+}
+.red5pro-subscriber {
+  width: 100%;
+}
+
+.subscriber-name-field {
+  position: relative;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  margin: 0;
+  padding: 4px;
+}

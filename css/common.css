@@ -1,0 +1,35 @@
+body {
+  margin: 0px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.hidden {
+  display: none;
+}
+.section {
+  display: flex;
+  flex-direction: row;
+}
+.subscribe-section {
+  flex-grow: 2;
+}
+.publish-section {
+  flex-grow: 1;
+}
+.subscriber-container, .publisher-container {
+  margin: 12px 12px 0 12px;
+}
+.status-details {
+  position: relative;
+  background-color: #333;
+  color: #fff;
+  padding: 12px;
+  margin: 12px 12px 0 12px;
+  text-align: center;
+}
+
+.error-field {
+  color: #fff!important;
+  background-color: #DB1F26!important;
+}

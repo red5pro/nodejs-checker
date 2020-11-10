@@ -1,0 +1,68 @@
+.publisher-container {
+  position: relative;
+  margin: 12px 12px 0 12px;
+  background-color: #000;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+}
+
+.publisher-error {
+  position: relative;
+  background-color: #db1f26;
+  color: #fff;
+  padding: 12px;
+  margin: 12px 12px 0 12px;
+  text-align: center;
+}
+
+#settings-container {
+  padding: 20px;
+}
+
+.settings-area {
+  padding: 5px;
+  background-color: #eeee;
+}
+
+.settings-field {
+  margin: 1rem;
+}
+
+.settings-label {
+  width: 45%;
+  display: inline-block;
+  margin-right: 1rem;
+  text-align: right;
+}
+
+.settings-field > input {
+  height: 1.5rem;
+  font-size: 1rem;
+  padding-left: 0.8rem;
+}
+
+.settings-field > select {
+  height: 1.5rem;
+  font-size: 1rem;
+  padding-left: 0.8rem;
+}
+
+@media (max-width:510px) {
+  .settings-field {
+    margin: 2rem 1rem;
+  }
+  .settings-field.settings-collapsable > input {
+    width: 90%;
+  }
+  .settings-field.settings-collapsable > select {
+    width: 90%;
+    display: block;
+  }
+  .settings-collapsable > .settings-label {
+    width: 100%;
+    text-align: left;
+    margin-left: 0.3rem;
+    margin-bottom: 0.6rem;
+  }
+}
