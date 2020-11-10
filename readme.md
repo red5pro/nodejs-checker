@@ -1,5 +1,6 @@
 # Node Checker 
 This is a Node.js server that can be used to verify that all Edges of a Stream Manager are working as expected. The server will periodically get the list of `inservice` edges and for each of them start a chrome instance that will subscribe using that edge and a stream name randomly selected from the list of active ones. If the subscribe attempt fails the edge will be reported to the Stream Manager using the sunsetting API.  
+The integration of the Stream Manager and the details of the sunsetting API can be found in the [document](https://docs.google.com/document/d/1Q0ZjWfOYDCfyzy9ZhN_84pVQhsitPcoEAFHvf27sq3k/edit)
 
 # Installing 
 
