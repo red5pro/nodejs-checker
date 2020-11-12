@@ -6,6 +6,12 @@ The integration of the Stream Manager and the details of the sunsetting API can 
 
 This server will need to be installed on its own instance and run 24/7. 
 
+Install Google Chrome with the following commands:
+```sh 
+$ wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+$ sudo apt install ./google-chrome-stable_current_amd64.deb
+```
+
 Nodejs can be installed using the following commands:
 ```sh
 $ sudo apt-get update
