@@ -221,7 +221,7 @@ const killChrome = function (pids) {
 }
 
 const sunsetNodes = function (nodes) {
-    const url = `${smHost}/streammanager/api/4.0/admin/sunset?accessToken=${smToken}`
+    const url = `${smHost}/streammanager/api/4.0/admin/node/sunset?accessToken=${smToken}`
     makePostJsonRequest(url, nodes)
         .then(() => {
             console.log('Reported nodes ', nodes)
