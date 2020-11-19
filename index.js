@@ -135,6 +135,9 @@ const spawnChromeProcess = function (groupId, edgeAddress, context, streamName, 
     const webpage = `${baseWebPage}?sm=true&host=${smHost.substring(smHost.indexOf('/') + 2)}&node=${edgeAddress}&maxRetries=${maxRetries}&app=${context}&stream=${streamName}&groupId=${groupId}&timestamp=${timestamp}`
     const args = [
         '--autoplay-policy=no-user-gesture-required',
+        '--headless',
+        '--disable-gpu',
+        '--remote-debugging-port=9222',
         `${webpage}`
     ]
 
@@ -161,6 +164,18 @@ const spawnChromeProcess = function (groupId, edgeAddress, context, streamName, 
         console.log(`child process exited with code ${code}`);
         //child = null
     });
+
+    child.on('error', async (chunk) => {
+        console.log(chunk.toString('utf8'))
+    });
+
+    /*child.stderr.on('data', (chunk) => {
+        console.log(chunk.toString('utf8'))
+    });
+
+    child.stdout.on('data', (chunk) => {
+        console.log(chunk.toString('utf8'))
+    });*/
 }
 
 const handleNoResponseFromChrome = function (groupId, timestamp) {
@@ -220,7 +235,7 @@ const killChrome = function (pids) {
     }
 }
 
-const sunsetNodes = function (nodes) {
+const sunsetNodes = function (nodes) { 
     const url = `${smHost}/streammanager/api/4.0/admin/node/sunset?accessToken=${smToken}`
     makePostJsonRequest(url, nodes)
         .then(() => {
