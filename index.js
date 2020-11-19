@@ -168,17 +168,9 @@ const spawnChromeProcess = function (groupId, edgeAddress, context, streamName, 
     child.on('error', async (chunk) => {
         console.log(chunk.toString('utf8'))
     });
-
-    /*child.stderr.on('data', (chunk) => {
-        console.log(chunk.toString('utf8'))
-    });
-
-    child.stdout.on('data', (chunk) => {
-        console.log(chunk.toString('utf8'))
-    });*/
 }
 
-const handleNoResponseFromChrome = function (groupId, timestamp) {
+const handleNoResponseFromChrome = function (groupId, timesreturntamp) {
     setTimeout((groupId, timestamp) => {
         const group = chromeProcesses[timestamp][groupId] 
         if (group){
