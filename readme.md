@@ -64,7 +64,7 @@ CORS can be configured in the Stream Manager instances by modifying `{Red5-Pro}/
     </init-param>
     <init-param>
         <param-name>cors.supportedMethods</param-name>
-        <param-value>GET, POST, HEAD</param-value>
+        <param-value>GET, POST, DELETE, HEAD</param-value>
     </init-param>
     <init-param>
         <param-name>cors.maxAge</param-name>
