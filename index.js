@@ -170,7 +170,7 @@ const spawnChromeProcess = function (groupId, edgeAddress, context, streamName, 
     });
 }
 
-const handleNoResponseFromChrome = function (groupId, timesreturntamp) {
+const handleNoResponseFromChrome = function (groupId, timestamp) {
     setTimeout((groupId, timestamp) => {
         const group = chromeProcesses[timestamp][groupId] 
         if (group){
