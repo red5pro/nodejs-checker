@@ -58,7 +58,7 @@ The Stream Manager needs to have CORS configured to allow the Chrome process cre
     <async-supported>true</async-supported>
     <init-param>
         <param-name>cors.allowOrigin</param-name>
-        <param-value>http://127.0.0.1:8001/home</param-value>
+        <param-value>*</param-value>
     </init-param>
     <init-param>
         <param-name>cors.allowSubdomains</param-name>
@@ -66,7 +66,7 @@ The Stream Manager needs to have CORS configured to allow the Chrome process cre
     </init-param>
     <init-param>
         <param-name>cors.supportedMethods</param-name>
-        <param-value>*</param-value>
+        <param-value>GET, POST, DELETE, HEAD</param-value>
     </init-param>
     <init-param>
         <param-name>cors.maxAge</param-name>
