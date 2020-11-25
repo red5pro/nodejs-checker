@@ -49,7 +49,7 @@ Where:
 
 # Stream Manager Configuration
 
-The Stream Manager needs to have CORS configured to allow the Chrome process created by the Node Checker server to be able to subscribe to the live streams. The Chrome process will load the subscribe page from the local domain `http://127.0.0.1:8001/home`. CORS can be configured in the Stream Manager instances by modifying `{Red5-Pro}/webapps/streammanager/WEB_INF/web.xml` and adding the following lines:
+The Stream Manager needs to have CORS configured to allow the Chrome process created by the Node Checker server to be able to subscribe to the live streams. The Chrome process will load the subscribe page from the local domain `http://127.0.0.1:8001/home`. CORS can be configured in the Stream Manager instances by modifying `{Red5-Pro}/webapps/streammanager/WEB-INF/web.xml` and adding the following lines:
 ```
 <!-- CORS filter -->
 <filter>
@@ -66,7 +66,7 @@ The Stream Manager needs to have CORS configured to allow the Chrome process cre
     </init-param>
     <init-param>
         <param-name>cors.supportedMethods</param-name>
-        <param-value>GET, POST, DELETE, HEAD</param-value>
+        <param-value>*</param-value>
     </init-param>
     <init-param>
         <param-name>cors.maxAge</param-name>
