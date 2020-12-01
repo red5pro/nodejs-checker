@@ -1,6 +1,6 @@
 # Node Checker 
 This is a Node.js server that can be used to verify that all Edges of a Stream Manager are working as expected. The server will periodically get the list of `inservice` edges and for each of them start a chrome instance that will subscribe using that edge and a stream name randomly selected from the list of active ones. If the subscribe attempt fails the edge will be reported to the Stream Manager using the sunsetting API.  
-The integration of the Stream Manager and the details of the sunsetting API can be found in the [document](https://docs.google.com/document/d/1Q0ZjWfOYDCfyzy9ZhN_84pVQhsitPcoEAFHvf27sq3k/edit)
+The integration of the Stream Manager and the details of the sunsetting API can be found in the [Red5 Pro Documentation Site](https://www.red5pro.com/docs/autoscale/corrupted-node/installing-the-node-checker/)
 
 # Installing the Node.js server
 
@@ -12,7 +12,7 @@ $ wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 $ sudo apt install ./google-chrome-stable_current_amd64.deb
 ```
 
-Nodejs can be installed using the following commands:
+Install Nodejs using the following commands:
 ```sh
 $ sudo apt-get update
 $ curl -sL https://deb.nodesource.com/setup_8.x -o nodesource_setup.sh
@@ -56,7 +56,7 @@ CORS can be configured in the Stream Manager instances by modifying `{Red5-Pro}/
     <async-supported>true</async-supported>
     <init-param>
         <param-name>cors.allowOrigin</param-name>
-        <param-value>https://<streammanagerurl>, http://<nodecheckerip>:8001</param-value>
+        <param-value>https://<streammanagerurl>, http://<nodecheckerip>:8001, http://127.0.0.1:8001</param-value>
     </init-param>
     <init-param>
         <param-name>cors.allowSubdomains</param-name>
