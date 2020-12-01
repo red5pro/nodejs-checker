@@ -56,7 +56,7 @@ CORS can be configured in the Stream Manager instances by modifying `{Red5-Pro}/
     <async-supported>true</async-supported>
     <init-param>
         <param-name>cors.allowOrigin</param-name>
-        <param-value>*</param-value>
+        <param-value>https://<streammanagerurl>, http://<nodecheckerip>:8001</param-value>
     </init-param>
     <init-param>
         <param-name>cors.allowSubdomains</param-name>
