@@ -18,6 +18,7 @@ const baseWebPage = process.env.BASE_PAGE || 'http://127.0.0.1:8001/home'
 const protocolsToCheck = process.env.PROTOCOLS || 'WEBRTC'
 const concurrentChecks = process.env.CONCURRENT_CHECKS || 5
 
+
 if (checkInterval <= timeout){
     console.log('CHECK_INTERVAL must be greater than TIMEOUT')
     return
@@ -37,6 +38,8 @@ let checkWebRTC = true
 let checkHLS = false
 let checkRTMP = false
 
+let originNodeGroupMap = {}
+let nodesAndStreamsPerNodeGroup = {}
 let nodesToSunset = {}
 
 app.use(bodyParser.json())
@@ -227,7 +230,7 @@ const killChrome = function (pids) {
     }
 }
 
-const sunsetNodes = function (nodes) { 
+const sunsetNodes = function (nodes) {  
     const url = `${smHost}/streammanager/api/4.0/admin/node/sunset?accessToken=${smToken}`
     makePostJsonRequest(url, nodes)
         .then(() => {
@@ -242,7 +245,6 @@ const sunsetNodes = function (nodes) {
 const getActiveNodeGroups = function () {
     const groups = []
     const url = `${smHost}/streammanager/api/4.0/admin/nodegroup?accessToken=${smToken}`
-
     return new Promise((resolve, reject) => {
         makeGetRequest(url)
             .then((body) => {
@@ -262,7 +264,7 @@ const getActiveNodeGroups = function () {
     })
 }
 
-const getNodesInNodeGroup = function (nodeGroupName) {
+const getNodesInNodeGroupAndStoreOriginNodeGroupMapping = function (nodeGroupName) {
     const nodes = {
         "transcoder": [],
         "origin": [],
@@ -279,6 +281,12 @@ const getNodesInNodeGroup = function (nodeGroupName) {
                 jsonNodes.forEach(node => {
                     if (node.state === 'inservice') {
                         nodes[node.role].push(node.address)
+                        if (node.role === 'origin'){
+                            originNodeGroupMap[node.address] = nodeGroupName
+                        }
+                    }
+                    else if (node.role === 'origin'){
+                        delete originNodeGroupMap[node.address]
                     }
                 });
                 resolve(nodes)
@@ -329,7 +337,12 @@ const makePostJsonRequest = async function (url, payload) {
     })
 }
 
-const getEdges = function () {
+const clearStreamingData = () => {
+    nodesAndStreamsPerNodeGroup = {}
+    originNodeGroupMap = {}
+}
+
+const getStreamingData = function () {
     return new Promise((resolve, reject) => {
         getActiveNodeGroups()
             .then(async groups => {
@@ -337,22 +350,18 @@ const getEdges = function () {
                     return
                 }
 
-                let allEdges = []
                 const promises = []
                 promises.push(new Promise((resolve, reject) => {
                     groups.forEach(async group => {
-                        const nodesInGroup = await getNodesInNodeGroup(group)
-                        //console.log('Found nodes in group ' + group, nodesInGroup)
-                        nodesInGroup['edge'] ? resolve(nodesInGroup['edge']) : resolve([])
+                        nodesAndStreamsPerNodeGroup[group] = await getNodesInNodeGroupAndStoreOriginNodeGroupMapping(group)
+                        nodesAndStreamsPerNodeGroup[group].streams = []
+                        resolve()
                     })
                 }))
 
                 Promise.all(promises)
-                    .then(edges => {
-                        edges.forEach(edgeList => {
-                            allEdges = allEdges.concat(edgeList)
-                        })
-                        resolve(allEdges)
+                    .then(() => {
+                        resolve(nodesAndStreamsPerNodeGroup)
                     })
                     .catch((error) => {
                         reject(error)
@@ -364,45 +373,57 @@ const getEdges = function () {
     })
 }
 
-const checkEdgesHealth = function (streamName, edges) {
-    console.log(`Checking health of edges: ${edges.join(', ')}`)
-    const timestamp = new Date().getTime()
-    let groupId = Math.floor(Math.random() * 0x10000).toString(16)
-    const {context, stream} = getContextAndStream(streamName)
+const checkHealthOfEdges = function (streamingData) {
     let count = 0
     let group = 0
-    edges.forEach(edge => {
-        if (count >= concurrentChecks){
-            groupId = Math.floor(Math.random() * 0x10000).toString(16)
-            count = 0
-            group++
+    Object.keys(streamingData).forEach(nodeGroup => {
+        const edges = streamingData[nodeGroup].edge
+        const streams = streamingData[nodeGroup].streams 
+        if (!edges || edges.length <= 0){
+            console.log(`No edges found in node group ${nodeGroup}`)
+            return
+        }
+        if (!streams || streams.length <= 0){
+            console.log(`No streams found in node group ${nodeGroup}`)
+            return
         }
 
-        setTimeout((groupId, edge, context, stream, timestamp) => {
-            spawnChromeProcess(groupId, edge, context, stream, timestamp)
-        }, group * timeout, groupId, edge, context, stream, timestamp)
-        count++
+        const randomIndex = Math.floor(Math.random() * streams.length)
+        const streamToCheck = streams[randomIndex]
+        console.log(`Checking health of edges: ${edges.join(', ')} in node group ${nodeGroup} using stream ${streamToCheck}`)
+        const timestamp = new Date().getTime()
+        let groupId = Math.floor(Math.random() * 0x10000).toString(16)
+        const {context, stream} = getContextAndStream(streamToCheck)
+        
+        edges.forEach(edge => {
+            if (count >= concurrentChecks){
+                groupId = Math.floor(Math.random() * 0x10000).toString(16)
+                count = 0
+                group++
+            }
+    
+            setTimeout((groupId, edge, context, stream, timestamp) => {
+                spawnChromeProcess(groupId, edge, context, stream, timestamp)
+            }, group * timeout, groupId, edge, context, stream, timestamp)
+            count++
+        })
     })
 }
 
-const getStreamToCheck = function () {
+const populateStreamsToCheck = function (streamingData) {
     return new Promise((resolve, reject) => {
         const url = `${smHost}/streammanager/api/4.0/event/list`
         makeGetRequest(url)
             .then(response => {
                 const jsonResponse = JSON.parse(response)
-                const streamMap = {}
                 jsonResponse.forEach(item => {
-                    streamMap[`${item.scope}/${item.name}`] = true
+                    if (item.type === 'origin'){
+                        const nodeGroup = originNodeGroupMap[item.serverAddress]
+                        console.log('Adding stream ' +item.scope + '/' + item.name+ ' to node group ' + nodeGroup)
+                        streamingData[nodeGroup].streams.push(`${item.scope}/${item.name}`)
+                    }
                 })
-                const keys = Object.keys(streamMap)
-                if (keys.length <= 0) {
-                    return resolve(null)
-                }
-                const randomIndex = Math.floor(Math.random() * keys.length)
-                const streamToCheck = keys[randomIndex]
-                console.log(streamToCheck)
-                resolve(streamToCheck)
+                resolve()
             })
             .catch(error => {
                 console.log(error)
@@ -411,18 +432,35 @@ const getStreamToCheck = function () {
     })
 }
 
+
+
 const periodicHealthCheck = async function () {
-    const edges = await getEdges()
-    let minimumCheckInterval = Math.floor((edges.length / concurrentChecks ) * timeout) + 500
+    clearStreamingData()
+
+    const streamingData = await getStreamingData()
+    console.log('Found node groups: ', streamingData)
+    let numberOfEdges = 0
+    Object.keys(streamingData).forEach(group => {
+        if (group && streamingData[group]['edge'] && streamingData[group]['edge'].length > 0){
+            numberOfEdges += streamingData[group]['edge'].length
+        }
+    })
+
+    if (numberOfEdges <= 0){
+        console.log('Edges not found. Skipping health check')
+        return
+    }
+
+    let minimumCheckInterval = Math.floor((numberOfEdges / concurrentChecks ) * timeout) + 500
     if (minimumCheckInterval > checkInterval){
         console.log('Adjusted check interval to ' + minimumCheckInterval)
         checkInterval = minimumCheckInterval
     }
-    const streamToCheck = await getStreamToCheck()
-    if (streamToCheck && edges.length > 0) {
-        console.log(`Check edges ${edges.join(', ')} using stream ${streamToCheck}`)
-        checkEdgesHealth(streamToCheck, edges)
-    }
+
+    await populateStreamsToCheck(streamingData)
+
+    console.log('Found streams per node group: ', streamingData)
+    checkHealthOfEdges(streamingData)
 
     setTimeout(() => {
         periodicHealthCheck()

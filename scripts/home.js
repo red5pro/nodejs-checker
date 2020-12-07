@@ -129,6 +129,9 @@
     else if (event.type === 'Subscribe.Start'){
       console.log('success')
       postReport(true)
+      setTimeout(() => {
+        stopSubscribing()
+      }, 5000)
     }
 
     updateStatusFromEvent(event);
