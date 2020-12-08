@@ -28,13 +28,13 @@
   let subscriber
 
   let protocol = 'http:'
-  if (requiresStreamManager){
-      protocol = 'https:'
-  }
-  else if (host.indexOf('localhost') < 0 && host.indexOf('127.0.0.1') < 0){
+  if (requiresStreamManager) {
     protocol = 'https:'
   }
-  
+  else if (host.indexOf('localhost') < 0 && host.indexOf('127.0.0.1') < 0) {
+    protocol = 'https:'
+  }
+
   const secureConnection = protocol === 'https:'
   const subscriberConfig = {
     host: host,
@@ -42,16 +42,18 @@
     protocol: secureConnection ? 'wss' : 'ws',
     port: secureConnection ? '443' : 5080,
     connectionParams: {
-        username,
-        password,
-        token
+      username,
+      password,
+      token
     },
     streamName: streamName,
     mediaElementId: subscriberId
   }
-  let smConfig = {...subscriberConfig, ...{
-    app: 'streammanager'
-  }}
+  let smConfig = {
+    ...subscriberConfig, ...{
+      app: 'streammanager'
+    }
+  }
 
   const addLoadingIcon = (parent) => {
     const loadingIcon = document.createElement('img')
@@ -60,7 +62,7 @@
     loadingIcon.classList.add('loading-icon')
     parent.appendChild(loadingIcon)
   }
-  
+
   const removeLoadingIcon = (parent) => {
     const el = parent.querySelector('.loading-icon')
     if (el) {
@@ -75,7 +77,7 @@
   const enableStopPlayback = () => {
     setActiveLayout(true)
   }
-  
+
   // eslint-disable-next-line no-unused-vars
   const setActiveLayout = (flag) => {
     // TODO?
@@ -85,7 +87,7 @@
   const setFullscreenLayout = (flag) => {
     // TODO?
   }
-  
+
   const displayError = (message) => {
     errorInfo.innerText = `Error: ${message}`
     errorInfo.classList.remove('hidden')
@@ -101,8 +103,8 @@
     event.target.removeEventListener('canplay', onVideoElementPlayback)
     removeLoadingIcon(container)
   }
-  
-  
+
+
   const onSubscriberEvent = (event) => {
     if (event.type === 'Subscribe.Time.Update') return
     console.log(`[Subscriber:Event]:: ${event.type}`)
@@ -123,10 +125,10 @@
       const vh = (window.innerHeight - 140)
       // eslint-disable-next-line no-unused-vars
       const desiredHeight = Math.min(vh, height)
-//      container.style.height = document.querySelector(`#${subscriberId}`).style.height = `${desiredHeight}px`
+      //      container.style.height = document.querySelector(`#${subscriberId}`).style.height = `${desiredHeight}px`
       displayDetails(`Broadcast dimensions: ${width}, ${height}`)
     }
-    else if (event.type === 'Subscribe.Start'){
+    else if (event.type === 'Subscribe.Start') {
       console.log('success')
       postReport(true)
       setTimeout(() => {
@@ -137,8 +139,8 @@
     updateStatusFromEvent(event);
   }
 
-  const postReport = function(isWebRTCWorking){
-    const hostname = nodejsHost.indexOf('localhost') >= 0 ? `http://${nodejsHost}` : `https://${nodejsHost}` 
+  const postReport = function (isWebRTCWorking) {
+    const hostname = nodejsHost.indexOf('localhost') >= 0 ? `http://${nodejsHost}` : `https://${nodejsHost}`
     const url = `${hostname}/report`
     fetch(url, {
       method: 'post',
@@ -153,12 +155,12 @@
         isWebRTCWorking
       })
     })
-    .then(function () {
-      console.log('Request succeeded');
-    })
-    .catch(function (error) {
-      console.log('Request failed', error);
-    });
+      .then(function () {
+        console.log('Request succeeded');
+      })
+      .catch(function (error) {
+        console.log('Request failed', error);
+      });
   }
 
   const startSubscribing = async () => {
@@ -169,7 +171,7 @@
       addLoadingIcon(container)
       document.querySelector(`#${subscriberId}`).addEventListener('canplay', onVideoElementPlayback)
       let url
-      const { 
+      const {
         host,
         app,
         protocol,
@@ -180,7 +182,7 @@
       } else {
         url = `${protocol === 'wss' ? 'https' : 'http'}://${host}:${port}/${app}/streams.jsp`
       }
-      const available = await window.getIsStreamAvailable(url, streamName, requiresStreamManager) 
+      const available = await window.getIsStreamAvailable(url, streamName, requiresStreamManager)
       if (!available) {
         throw Error(`Stream ${streamName} not available.`)
       }
@@ -199,7 +201,7 @@
       retryConnection()
     }
   }
-  
+
   const stopSubscribing = async () => {
     document.querySelector(`#${subscriberId}`).removeEventListener('canplay', onVideoElementPlayback)
     try {
@@ -226,15 +228,17 @@
         /*const {
           serverAddress
         } = subscriberSM*/
-        smConfig.connectionParams = {...subscriberConfig.connectionParams, ...{
-          host: serverAddress,
-          app: appContext
-        }}
+        smConfig.connectionParams = {
+          ...subscriberConfig.connectionParams, ...{
+            host: serverAddress,
+            app: appContext
+          }
+        }
       }
 
       const sub = new red5prosdk.Red5ProSubscriber()
       subscriber = await sub.setPlaybackOrder(['rtc', 'rtmp', 'hls']).init({
-        rtc:  requiresStreamManager ? smConfig : subscriberConfig
+        rtc: requiresStreamManager ? smConfig : subscriberConfig
       })
       subscriber.on('*', onSubscriberEvent)
 
@@ -250,10 +254,10 @@
   let t
   let retries = 1
   const retryConnection = async () => {
-    if (retries > maxRetries){
-      return 
+    if (retries > maxRetries) {
+      return
     }
-    
+
     retries++
     try {
       clearTimeout(t)

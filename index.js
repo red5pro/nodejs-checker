@@ -14,12 +14,15 @@ const maxRetries = process.env.MAX_SUBSCRIBE_RETRIES || 3
 const maxFailures = process.env.MAX_FAILURES || 2
 let checkInterval = process.env.CHECK_INTERVAL || 30000
 const timeout = process.env.TIMEOUT || 15000
-const baseWebPage = process.env.BASE_PAGE || 'http://127.0.0.1:8001/home'
 const protocolsToCheck = process.env.PROTOCOLS || 'WEBRTC'
 const concurrentChecks = process.env.CONCURRENT_CHECKS || 5
+const username = process.env.USERNAME || 'username'
+const password = process.env.PASSWORD || 'password'
+const token = process.env.TOKEN || 'token'
+const baseWebPage = process.env.BASE_PAGE || 'http://127.0.0.1:8001/home'
 
 
-if (checkInterval <= timeout){
+if (checkInterval <= timeout) {
     console.log('CHECK_INTERVAL must be greater than TIMEOUT')
     return
 }
@@ -32,6 +35,9 @@ console.log('Max Failures Before Sunsetting:', maxFailures)
 console.log('Health Check Interval:', checkInterval)
 console.log('Health Check Timeout:', timeout)
 console.log('Concurrent Health Checks:', concurrentChecks)
+console.log('RTA Username:', username)
+console.log('RTA Password:', password)
+console.log('RTA Token:', token)
 
 let chromeProcesses = {}
 let checkWebRTC = true
@@ -53,22 +59,23 @@ app.use(function (req, res, next) {
 })
 
 app.get('/home', function (req, res) {
-    res.sendFile(path.join(__dirname,'/home.html'));
+    res.sendFile(path.join(__dirname, '/home.html'));
 })
 
 app.get('/css/*', function (req, res) {
-    res.sendFile(path.join(__dirname,req.originalUrl));
+    res.sendFile(path.join(__dirname, req.originalUrl));
 })
 
 app.get('/scripts/*', function (req, res) {
-    res.sendFile(path.join(__dirname,req.originalUrl));
+    res.sendFile(path.join(__dirname, req.originalUrl));
 })
 
 app.get('/lib/*', function (req, res) {
-    res.sendFile(path.join(__dirname,req.originalUrl));
+    res.sendFile(path.join(__dirname, req.originalUrl));
 })
 
 app.post('/report', function (req, res) {
+    console.log('Report From Chrome page')
     console.log(req.body)
 
     const nodeAddress = req.body.node
@@ -79,23 +86,22 @@ app.post('/report', function (req, res) {
     const isHLSWorking = req.body.isHLSWorking
     const isRTMPWorking = req.body.isRTMPWorking
 
-    if (!Object.hasOwnProperty.call(chromeProcesses, timestamp) || !Object.hasOwnProperty.call(chromeProcesses[timestamp],groupId)) {
+    if (!Object.hasOwnProperty.call(chromeProcesses, timestamp) || !Object.hasOwnProperty.call(chromeProcesses[timestamp], groupId)) {
         console.log(`process with timestamp ${timestamp} and groupId ${groupId} not found`)
         return
     }
 
-    const group = chromeProcesses[timestamp][groupId] 
+    const group = chromeProcesses[timestamp][groupId]
     console.log(`Received report for timestamp ${timestamp}, group ${groupId}, node ${nodeAddress} and stream ${streamName}`)
-    
+
     if ((!checkWebRTC || isWebRTCWorking) && (!checkHLS || isHLSWorking) && (!checkRTMP || isRTMPWorking)) {
         // it is working
         // remove node from list 
         group.edges = group.edges.filter(edge => edge != nodeAddress)
-        if (Object.hasOwnProperty.call(nodesToSunset,nodeAddress)){
+        if (Object.hasOwnProperty.call(nodesToSunset, nodeAddress)) {
             delete nodesToSunset[nodeAddress]
         }
     }
-    console.log(group.edges)
 
     res.send('report received')
 })
@@ -125,9 +131,9 @@ const parseProtocolsToCheck = function (protocolsToCheck) {
     console.log(`Checking protocols ${protocols.join(', ')}`)
 }
 
-const getContextAndStream = function(streamName){
+const getContextAndStream = function (streamName) {
     let index = streamName.lastIndexOf('/')
-    return { context: streamName.substring(0, index), stream: streamName.substring(index+1) }
+    return { context: streamName.substring(0, index), stream: streamName.substring(index + 1) }
 }
 
 const spawnChromeProcess = function (groupId, edgeAddress, context, streamName, timestamp) {
@@ -135,7 +141,7 @@ const spawnChromeProcess = function (groupId, edgeAddress, context, streamName, 
     const process = 'google-chrome'
     // todo uncomment for windows
     //const process = 'chrome.exe'
-    const webpage = `${baseWebPage}?sm=true&host=${smHost.substring(smHost.indexOf('/') + 2)}&node=${edgeAddress}&maxRetries=${maxRetries}&app=${context}&stream=${streamName}&groupId=${groupId}&timestamp=${timestamp}`
+    const webpage = `${baseWebPage}?sm=true&host=${smHost.substring(smHost.indexOf('/') + 2)}&node=${edgeAddress}&maxRetries=${maxRetries}&app=${context}&stream=${streamName}&groupId=${groupId}&timestamp=${timestamp}&username=${username}&password=${password}&token=${token}`
     const args = [
         '--autoplay-policy=no-user-gesture-required',
         '--headless',
@@ -149,15 +155,15 @@ const spawnChromeProcess = function (groupId, edgeAddress, context, streamName, 
         detached: true
     });
 
-    if (!Object.hasOwnProperty.call(chromeProcesses, timestamp)){
+    if (!Object.hasOwnProperty.call(chromeProcesses, timestamp)) {
         chromeProcesses[timestamp] = {}
     }
     const groups = chromeProcesses[timestamp]
-    if (!Object.hasOwnProperty.call(groups, groupId)){
+    if (!Object.hasOwnProperty.call(groups, groupId)) {
         groups[groupId] = {
-            'pids':[],
-            'edges':[]
-        }    
+            'pids': [],
+            'edges': []
+        }
         handleNoResponseFromChrome(groupId, timestamp)
     }
     groups[groupId].pids.push(child.pid)
@@ -175,13 +181,13 @@ const spawnChromeProcess = function (groupId, edgeAddress, context, streamName, 
 
 const handleNoResponseFromChrome = function (groupId, timestamp) {
     setTimeout((groupId, timestamp) => {
-        const group = chromeProcesses[timestamp][groupId] 
-        if (group){
+        const group = chromeProcesses[timestamp][groupId]
+        if (group) {
             killChrome(group.pids)
             const edges = group.edges
             handleEdgesToSunset(edges)
-            delete chromeProcesses[timestamp][groupId]  
-            if (Object.keys(chromeProcesses[timestamp]).length <= 0){
+            delete chromeProcesses[timestamp][groupId]
+            if (Object.keys(chromeProcesses[timestamp]).length <= 0) {
                 delete chromeProcesses[timestamp]
             }
             console.log(JSON.stringify(chromeProcesses))
@@ -189,16 +195,16 @@ const handleNoResponseFromChrome = function (groupId, timestamp) {
     }, timeout, groupId, timestamp)
 }
 
-const handleEdgesToSunset = function (edges){
-    if (!edges || edges.length <= 0){
-        return 
+const handleEdgesToSunset = function (edges) {
+    if (!edges || edges.length <= 0) {
+        return
     }
 
-    console.log('Unresponsive edges '+edges.join(', '))
+    console.log('Unresponsive edges ' + edges.join(', '))
     const nodesToSunsetNow = []
     edges.forEach(edge => {
-        if (Object.hasOwnProperty.call(nodesToSunset, edge)){
-            if (nodesToSunset[edge] >= maxFailures){
+        if (Object.hasOwnProperty.call(nodesToSunset, edge)) {
+            if (nodesToSunset[edge] >= maxFailures) {
                 nodesToSunsetNow.push(edge)
                 delete nodesToSunset[edge]
             }
@@ -206,7 +212,7 @@ const handleEdgesToSunset = function (edges){
                 nodesToSunset[edge] += 1
             }
         }
-        else if (maxFailures == 1){
+        else if (maxFailures == 1) {
             nodesToSunsetNow.push(edge)
             delete nodesToSunset[edge]
         }
@@ -215,12 +221,12 @@ const handleEdgesToSunset = function (edges){
         }
     })
 
-    if (nodesToSunsetNow.length > 0){
-        console.log('Sunset edges '+nodesToSunsetNow.join(', '))
+    if (nodesToSunsetNow.length > 0) {
+        console.log('Sunset edges ' + nodesToSunsetNow.join(', '))
         // TODO uncomment 
         sunsetNodes(nodesToSunsetNow)
     }
-    
+
 }
 
 const killChrome = function (pids) {
@@ -230,7 +236,7 @@ const killChrome = function (pids) {
     }
 }
 
-const sunsetNodes = function (nodes) {  
+const sunsetNodes = function (nodes) {
     const url = `${smHost}/streammanager/api/4.0/admin/node/sunset?accessToken=${smToken}`
     makePostJsonRequest(url, nodes)
         .then(() => {
@@ -281,11 +287,11 @@ const getNodesInNodeGroupAndStoreOriginNodeGroupMapping = function (nodeGroupNam
                 jsonNodes.forEach(node => {
                     if (node.state === 'inservice') {
                         nodes[node.role].push(node.address)
-                        if (node.role === 'origin'){
+                        if (node.role === 'origin') {
                             originNodeGroupMap[node.address] = nodeGroupName
                         }
                     }
-                    else if (node.role === 'origin'){
+                    else if (node.role === 'origin') {
                         delete originNodeGroupMap[node.address]
                     }
                 });
@@ -346,7 +352,7 @@ const getStreamingData = function () {
     return new Promise((resolve, reject) => {
         getActiveNodeGroups()
             .then(async groups => {
-                if (groups.length <= 0){
+                if (groups.length <= 0) {
                     return
                 }
 
@@ -378,12 +384,12 @@ const checkHealthOfEdges = function (streamingData) {
     let group = 0
     Object.keys(streamingData).forEach(nodeGroup => {
         const edges = streamingData[nodeGroup].edge
-        const streams = streamingData[nodeGroup].streams 
-        if (!edges || edges.length <= 0){
+        const streams = streamingData[nodeGroup].streams
+        if (!edges || edges.length <= 0) {
             console.log(`No edges found in node group ${nodeGroup}`)
             return
         }
-        if (!streams || streams.length <= 0){
+        if (!streams || streams.length <= 0) {
             console.log(`No streams found in node group ${nodeGroup}`)
             return
         }
@@ -393,15 +399,15 @@ const checkHealthOfEdges = function (streamingData) {
         console.log(`Checking health of edges: ${edges.join(', ')} in node group ${nodeGroup} using stream ${streamToCheck}`)
         const timestamp = new Date().getTime()
         let groupId = Math.floor(Math.random() * 0x10000).toString(16)
-        const {context, stream} = getContextAndStream(streamToCheck)
-        
+        const { context, stream } = getContextAndStream(streamToCheck)
+
         edges.forEach(edge => {
-            if (count >= concurrentChecks){
+            if (count >= concurrentChecks) {
                 groupId = Math.floor(Math.random() * 0x10000).toString(16)
                 count = 0
                 group++
             }
-    
+
             setTimeout((groupId, edge, context, stream, timestamp) => {
                 spawnChromeProcess(groupId, edge, context, stream, timestamp)
             }, group * timeout, groupId, edge, context, stream, timestamp)
@@ -417,9 +423,9 @@ const populateStreamsToCheck = function (streamingData) {
             .then(response => {
                 const jsonResponse = JSON.parse(response)
                 jsonResponse.forEach(item => {
-                    if (item.type === 'origin'){
+                    if (item.type === 'origin') {
                         const nodeGroup = originNodeGroupMap[item.serverAddress]
-                        console.log('Adding stream ' +item.scope + '/' + item.name+ ' to node group ' + nodeGroup)
+                        console.log('Adding stream ' + item.scope + '/' + item.name + ' to node group ' + nodeGroup)
                         streamingData[nodeGroup].streams.push(`${item.scope}/${item.name}`)
                     }
                 })
@@ -441,18 +447,18 @@ const periodicHealthCheck = async function () {
     console.log('Found node groups: ', streamingData)
     let numberOfEdges = 0
     Object.keys(streamingData).forEach(group => {
-        if (group && streamingData[group]['edge'] && streamingData[group]['edge'].length > 0){
+        if (group && streamingData[group]['edge'] && streamingData[group]['edge'].length > 0) {
             numberOfEdges += streamingData[group]['edge'].length
         }
     })
 
-    if (numberOfEdges <= 0){
+    if (numberOfEdges <= 0) {
         console.log('Edges not found. Skipping health check')
         return
     }
 
-    let minimumCheckInterval = Math.floor((numberOfEdges / concurrentChecks ) * timeout) + 500
-    if (minimumCheckInterval > checkInterval){
+    let minimumCheckInterval = Math.floor((numberOfEdges / concurrentChecks) * timeout) + 500
+    if (minimumCheckInterval > checkInterval) {
         console.log('Adjusted check interval to ' + minimumCheckInterval)
         checkInterval = minimumCheckInterval
     }

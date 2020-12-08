@@ -31,7 +31,7 @@ npm install
 
 The server can be started with the following command:
 ```sh
-PORT=<Node-js-Port> SM_HOST=<Hostname-of-Stream-Manager> SM_TOKEN=<Token-Of-Stream-Manager> MAX_SUBSCRIBE_RETRIES=<Max-Retries> MAX_FAILURES=<Max-Failures> CHECK_INTERVAL=<Check-Interval> TIMEOUT=<Timeout> CONCURRENT_CHECKS=<Concurrent-Checks> forever start index.js
+PORT=<Node-js-Port> SM_HOST=<Hostname-of-Stream-Manager> SM_TOKEN=<Token-Of-Stream-Manager> MAX_SUBSCRIBE_RETRIES=<Max-Retries> MAX_FAILURES=<Max-Failures> CHECK_INTERVAL=<Check-Interval> TIMEOUT=<Timeout> CONCURRENT_CHECKS=<Concurrent-Checks> USERNAME=<RTA-Username>  PASSWORD=<RTA-Password> TOKEN=<RTA-Token> forever start index.js
 ```
 Where:
 * PORT - The Port used by the Node.js server - defaults to `8001`.
@@ -42,6 +42,9 @@ Where:
 * TIMEOUT - The maximum time in milliseconds given to the Chrome Instance to report if it could subscribe or not - defaults to `15000` milliseconds. 
 * CHECK_INTERVAL - The period of the health checks in milliseconds - defaults to `30000` milliseconds.
 * CONCURRENT_CHECKS - The maximum number of Edges that the Nodejs server can check at the same time - defaults to `5`. It should be noted that the server will create `<CONCURRENT_CHECKS>` Chrome instances at the same time. If there are more edges than `<CONCURRENT_CHECKS>` then they will be divided in groups of size smaller or equal to `<CONCURRENT_CHECKS>`. When more groups are used, the Nodejs server may increase the value of `<CHECK_INTERVAL>` to guarantee that there are never more than `<CONCURRENT_CHECKS>` chrome instances. In general `CHECK_INTERVAL > ((# of edges / <CONCURRENT_CHECKS>) * <TIMEOUT>)`
+* USERNAME - The username to use for the Round Trip Authentication if configured on the Red5 Pro Cluster 
+* PASSWORD - The password to use for the Round Trip Authentication if configured on the Red5 Pro Cluster
+* TOKEN - The token to use for the Round Trip Authentication if configured on the Red5 Pro Cluster
 
 # Installing the Stream Manager 
 
